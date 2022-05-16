@@ -2,7 +2,10 @@ const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar',
+  // 'https://www.googleapis.com/auth/drive'
+];
 const TOKEN_PATH = './token.json';
 
 const gogoogle = callback => {

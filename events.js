@@ -3,17 +3,31 @@ class Event {
     const now = new Date()
     const later = new Date()
     const timeZone = params.timeZone || 'America/Mexico_City'
-    later.setMinutes(later.getMinutes() + 30)
+    let laterMinutes = 30
+    if (params.maxTime) {
+      later.setTime(params.start.getTime())
+      // max time is needed - 30 to avoid going overtime
+      const maxTime = params.maxTime - 30
+      // get a random time between 30 and maxtime
+      const random = Math.round(Math.random() * maxTime) + 30
+      // round time to blocks of 15 minutes
+      laterMinutes = Math.round(random / 15) * 15
+    }
+    later.setMinutes(later.getMinutes() + laterMinutes)
     const pParams = {
       summary: params.summary || 'Ocupado',
       start: {
-        dateTime: params.start || now.toISOString(),
+        dateTime: params.start.toISOString() || now.toISOString(),
         timeZone
       },
       end: {
-        dateTime: params.end || later.toISOString(),
+        dateTime: params.end?.toISOString() || later.toISOString(),
         timeZone
-      }
+      },
+      reminders: {
+        useDefault: false
+      },
+      colorId: '3'
     }
     for (var key in pParams) {
       this[key] = pParams[key]

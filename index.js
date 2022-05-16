@@ -38,59 +38,113 @@ const listEvents = callback => {
   });
 }
 
-const createEvent = event => {
-  const calendar = google.calendar({version: 'v3', auth});
-  calendar.events.insert({
-    auth, calendarId: 'primary',
-    resource: event
-  }, (err, ev) => {
-    if (err) throw err.message
-    console.log(new Date(ev.data.start.dateTime))
+const createEvent = async (event, cb) => {
+  const p = new Promise((resolve, reject) => {
+    const calendar = google.calendar({version: 'v3', auth});
+    calendar.events.insert({
+      auth, calendarId: 'primary',
+      resource: event
+    }, (err, ev) => {
+      if (err) console.log(err)
+      console.log(new Date(ev.data.start.dateTime))
+      return resolve()
+    })
   })
+  return p
+}
+
+const saveEvents = async (events, index = 0) => {
+  if (!events[index]) return
+  await createEvent(events[index])
+  saveEvents(events, index + 1)
+}
+
+const generateEvents = (initial, end, acum = []) => {
+  const time = getStartOfDay()
+  time.setMinutes(initial)
+  if (end - initial <= 30) {
+    if (end - initial === 0) return acum
+    const timeEnd = getStartOfDay()
+    timeEnd.setMinutes(end)
+    const event = new Event({
+      start: time,
+      end: timeEnd
+    })
+    acum.push(event)
+    return acum
+  }
+  const event = new Event({
+    start: time,
+    maxTime: Math.min(end - initial, 60)
+  })
+  const endTime = new Date(event.end.dateTime)
+  const endMinutes = endTime.getHours() * 60 + endTime.getMinutes()
+  acum.push(event)
+  return generateEvents(endMinutes, end, acum)
 }
 
 const getGaps = events => {
-  const availableHours = [... new Array(24).fill(null, 0, 24)]
-  availableHours.fill(true, 10, 20)
+  const availableMinutes = [... new Array(1440).fill(null, 0, 1440)]
+  const initHours = 10
+  const endHours = 21
+  const initMinute = initHours * 60
+  const endMinute = endHours * 60
+  availableMinutes.fill(true, initMinute + 1, endMinute)
   events.forEach(event => {
-    const init = new Date(event.start.dateTime).getHours()
-    const end = new Date(event.end.dateTime).getHours()
-    availableHours.fill(null, init, end)
+    const init = new Date(event.start.dateTime)
+    const initialMinute = init.getHours() * 60 + init.getMinutes()
+    const end = new Date(event.end.dateTime)
+    const endMinute = end.getHours() * 60 + end.getMinutes()
+    availableMinutes.fill(null, initialMinute, endMinute)
   })
-  gaps = availableHours
+  gaps = availableMinutes
     .map((value, index) => {
       if (value) return index
       return null
     })
     .filter(value => value)
-    .filter(value => {
-      const now = new Date().getHours()
-      return value >= now
+  let groups = []
+  let index = 0
+  gaps.forEach(minute => {
+    if (!groups[index]) {
+      groups[index] = [minute, minute]
+      return
+    }
+    if (groups[index][1] === minute - 1) {
+      groups[index][1] = minute
+      return
+    }
+    index = index + 1
+  })
+  groups = groups
+    .flatMap(([init, end]) => {
+      const gapInit = init - 1
+      const gapEnd = end + 1
+      return generateEvents(gapInit, gapEnd)
     })
-    .map(hour => {
-      const start = getStartOfDay()
-      start.setHours(hour)
-      const end = new Date(start.getTime())
-      end.setHours(end.getHours() + 1)
-      const event = new Event({
-        start: start.toISOString(),
-        end: end.toISOString()
-      })
-      return event
-    })
-    .forEach(event => {
-      const date = new Date(event.start.dateTime)
-      date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
-      // console.log(date)
-      createEvent(event)
-    })
+  // console.log(groups)
+  saveEvents(groups)
+    // .filter(value => {
+      // const now = new Date().getHours()
+      // return value >= now
+    // })
+    // .map(hour => {
+      // const start = getStartOfDay()
+      // start.setHours(hour)
+      // const end = new Date(start.getTime())
+      // end.setHours(end.getHours() + 1)
+      // const event = new Event({
+        // start: start.toISOString(),
+        // end: end.toISOString()
+      // })
+      // return event
+    // })
+    // .forEach(event => {
+      // createEvent(event)
+    // })
 }
 
 
 const ready = () =>{
   listEvents(getGaps)
-
-  // const event = new Event()
-  // console.log(event)
-  // createEvent(event)
 }
