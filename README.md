@@ -14,6 +14,7 @@ Esto no afecta algún día a futuro, solo afecta el día corriente
 - Necesitas una cuenta de oauth de google y node
 - Descarga tu secrets.json de google cloud config y guárdalo como `secrets.json` en la raíz del repo
 - `npm install`
+- Necesitas un archivo llamado `excuses.json` en la raíz (hay un excuses.example.json con una guia)
 
 ## Forma de uso
 Para iniciar, solo typea `node index.js`

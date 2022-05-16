@@ -2,3 +2,4 @@ node_modules/*
 secrets.json
 token.json
 .DS_Store
+excuses.json

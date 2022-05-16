@@ -1,5 +1,7 @@
+const excuses = require('./excuses.json')
 class Event {
   constructor (params = {}) {
+    const alibi = excuses[Math.round(Math.random() * (excuses.length - 1))]
     const now = new Date()
     const later = new Date()
     const timeZone = params.timeZone || 'America/Mexico_City'
@@ -15,7 +17,7 @@ class Event {
     }
     later.setMinutes(later.getMinutes() + laterMinutes)
     const pParams = {
-      summary: params.summary || 'Ocupado',
+      summary: params.summary || alibi,
       start: {
         dateTime: params.start.toISOString() || now.toISOString(),
         timeZone

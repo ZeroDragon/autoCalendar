@@ -3,6 +3,9 @@ const Event = require('./events').Event
 let auth
 let google
 
+const INITHOURS = 15
+const ENDHOURS = 21
+
 connect.gogoogle(resp => {
   auth = resp.auth
   google = resp.google
@@ -61,6 +64,10 @@ const saveEvents = async (events, index = 0) => {
 
 const generateEvents = (initial, end, acum = []) => {
   const time = getStartOfDay()
+  let lastAlibi = null
+  if (acum[0]) {
+    lastAlibi = [...acum].pop().summary
+  }
   time.setMinutes(initial)
   if (end - initial <= 30) {
     if (end - initial === 0) return acum
@@ -70,6 +77,9 @@ const generateEvents = (initial, end, acum = []) => {
       start: time,
       end: timeEnd
     })
+    if (event.summary === lastAlibi) {
+      return generateEvents(initial, end, acum)
+    }
     acum.push(event)
     return acum
   }
@@ -77,6 +87,9 @@ const generateEvents = (initial, end, acum = []) => {
     start: time,
     maxTime: Math.min(end - initial, 60)
   })
+  if (event.summary === lastAlibi) {
+    return generateEvents(initial, end, acum)
+  }
   const endTime = new Date(event.end.dateTime)
   const endMinutes = endTime.getHours() * 60 + endTime.getMinutes()
   acum.push(event)
@@ -85,10 +98,8 @@ const generateEvents = (initial, end, acum = []) => {
 
 const getGaps = events => {
   const availableMinutes = [... new Array(1440).fill(null, 0, 1440)]
-  const initHours = 10
-  const endHours = 21
-  const initMinute = initHours * 60
-  const endMinute = endHours * 60
+  const initMinute = INITHOURS * 60
+  const endMinute = ENDHOURS * 60
   availableMinutes.fill(true, initMinute + 1, endMinute)
   events.forEach(event => {
     const init = new Date(event.start.dateTime)
