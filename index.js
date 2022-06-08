@@ -3,7 +3,8 @@ const Event = require('./events').Event
 let auth
 let google
 
-const INITHOURS = 15
+const [, , dayOffset, initHours] = process.argv
+const INITHOURS = initHours || 15
 const ENDHOURS = 21
 
 connect.gogoogle(resp => {
@@ -13,7 +14,9 @@ connect.gogoogle(resp => {
 })
 
 const getStartOfDay = () => {
+  const offset = dayOffset || 0
   const nDate = new Date()
+  nDate.setDate(nDate.getDate() + ~~offset)
   nDate.setHours(0)
   nDate.setMinutes(0)
   nDate.setSeconds(0)
@@ -98,7 +101,7 @@ const generateEvents = (initial, end, acum = []) => {
 
 const getGaps = events => {
   const availableMinutes = [... new Array(1440).fill(null, 0, 1440)]
-  const initMinute = INITHOURS * 60
+  const initMinute = ~~INITHOURS * 60
   const endMinute = ENDHOURS * 60
   availableMinutes.fill(true, initMinute + 1, endMinute)
   events.forEach(event => {
